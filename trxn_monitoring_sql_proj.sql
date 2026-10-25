@@ -1,12 +1,25 @@
 -- Query 1 (behavior deep dive)
 -- we are not only investigating large amount of transactions (over 20) made in one day per user,  
 -- but also the amounts averages, min and max
-select user_id, date(hour) as trxn_time, count(*) as trxn_count, round(sum(amount), 2) as total_amount_spent,
-round(avg(amount), 2) as avg_amount_spent, round(max(amount), 2) as max_amount_spent, round(min(amount), 2) as min_amount_spent
-from synthetic_fraud_dataset
-group by user_id, trxn_time
-having trxn_count >= 20
-order by trxn_count asc;
+with ranked AS (
+	SELECT user_id, amount
+	row_number() OVER (PARTITION BY user_id ORDER BY amount) AS a,
+	count(*) OVER (PARTITION BY user_id) AS b
+	FROM synthetic_fraud_dataset
+	)
+-- there is no built in MEDIAN() function in mySQL, so our job is to come up with a way that replicates the same thing	
+with user_stats AS (
+	SELECT user_id, count(*) as trxn_count, round(sum(amount), 2) as total_amount_spent, 
+	round(avg(amount), 2) as avg_amount_spent, round(max(amount), 2) as max_amount_spent, round(min(amount), 2) as min_amount_spent,
+	round(avg(CASE WHEN rn in (floor((b+1)/2), ceil((b+1)/2)) then amount END) as median_amount_spent
+	FROM ranked
+	GROUP BY user_id
+
+SELECT * round(max_amount_spent/median_amount_spent, 2) AS max_to_median -- looking at the ratio max amount to median amount spent for each user
+FROM user_stats
+HAVING count(*) >= 20 
+	AND max_amount_spent >= 5 * median_amount_spent --abitrary, open to change based investigator's needs
+ORDER BY max_to_median DESC;
 
 -- Query 2
 select user_id, date(hour) as trxn_time, count(*) as trxn_count from synthetic_fraud_dataset
