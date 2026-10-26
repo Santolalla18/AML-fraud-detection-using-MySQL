@@ -28,7 +28,7 @@ Each rule flags transactions. **Precision** is the share of flagged transactions
 | 1. Odd hours | `hour < 6` | 193 | 193 | 100% | 38.6% |
 | 2. High-risk country | `country = 'NG'` | 100 | 100 | 100% | 20.0% |
 | 3. High amount | `amount > 500` | 337 | 337 | 100% | 67.4% |
-| 4. Outlier vs. user's own median | `amount > 5 x user median` (users with 5+ transactions) | 331 | 329 | 99.4% | 65.8% |
+| 4. Outlier vs. user's own median | `amount > 5 x user median` (users with 10+ transactions) | 331 | 329 | 99.4% | 65.8% |
 | 5. Repeated fixed amounts | same amount (above $1) appears 10+ times | 133 | 133 | 100% | 26.6% |
 | **Any rule (1 to 5)** | at least one rule hit | **493** | **491** | **99.6%** | **98.2%** |
 
