@@ -36,22 +36,27 @@ Each rule flags transactions. **Precision** is the share of flagged transactions
 My first version compared each user's maximum to their average. One large transaction inflates the average and hides itself. Using the median fixes that. At the same 5x threshold, the average baseline catches 228 fraud transactions (45.6% recall, no false positives). The median baseline catches 329 (65.8% recall) at the cost of 2 false positives.
 
 ```sql script
-with ranked as (
-  select user_id, amount,
-         row_number() over (partition by user_id order by amount) as rn,
-         count(*)     over (partition by user_id)                  as cnt
-  from synthetic_fraud_dataset
-),
-medians as (
-  select user_id, max(cnt) as cnt,
-         avg(case when rn in (floor((cnt+1)/2), ceil((cnt+1)/2)) then amount end) as median_amount
-  from ranked
-  group by user_id
-)
-select t.*
-from synthetic_fraud_dataset t
-join medians m using (user_id)
-where m.cnt >= 5 and t.amount > 5 * m.median_amount;
+with ranked AS (
+	SELECT user_id, amount,
+	row_number() OVER (PARTITION BY user_id ORDER BY amount) AS a,
+	count(*) OVER (PARTITION BY user_id) AS b
+	FROM synthetic_fraud_dataset
+	)
+,
+-- there is no built in MEDIAN() function in mySQL, so our job is to come up with a way that simulates the same thing	
+user_stats AS (
+	SELECT user_id, count(*) as trxn_count, round(sum(amount), 2) as total_amount_spent, 
+	round(avg(amount), 2) as avg_amount_spent, round(max(amount), 2) as max_amount_spent, round(min(amount), 2) as min_amount_spent,
+	round(avg(CASE WHEN a in (floor((b+1)/2), ceil((b+1)/2)) then amount END), 2) as median_amount_spent
+    FROM ranked
+	GROUP BY user_id
+    ) 
+
+SELECT *, round(max_amount_spent/median_amount_spent, 2) AS max_to_median -- looking at the ratio max amount to median amount spent for each user
+FROM user_stats
+WHERE trxn_count >= 10 
+	AND max_amount_spent >= 5 * median_amount_spent -- abitrary, open to change based investigator's needs
+ORDER BY max_to_median DESC;
 ```
 
 MySQL has no `MEDIAN()` built in function. The middle row (or the two middle rows when the count is even) is averaged with conditional aggregation.
