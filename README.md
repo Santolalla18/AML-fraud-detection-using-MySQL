@@ -16,7 +16,7 @@ Rule-based transaction monitoring in MySQL, evaluated against labeled data. Each
 
 Things to know about the dataset:
 - It is **synthetic**. The fraud label comes from how the data was generated, not from real investigations.
-- `hour` is an **integer hour of day (0 to 23)** for a single day, not a timestamp. Date functions like `DATE()` and `HOUR()` don't apply to it.
+- `hour` is an **integer hour of day (0 to 23)** for a single day, not a timestamp data type. Date functions like `DATE()` and `HOUR()` don't apply to it.
 - 231 transactions are exactly $1.00 and none are fraud. This looks like a floor from data generation, so rules that look for repeated amounts exclude it.
 
 ## Detection rules and results
@@ -35,7 +35,7 @@ Each rule flags transactions. **Precision** is the share of flagged transactions
 ### Why a median baseline (Rule 4)
 My first version compared each user's maximum to their average. One large transaction inflates the average and hides itself. Using the median fixes that. At the same 5x threshold, the average baseline catches 228 fraud transactions (45.6% recall, no false positives). The median baseline catches 329 (65.8% recall) at the cost of 2 false positives.
 
-```sql
+```sql script
 with ranked as (
   select user_id, amount,
          row_number() over (partition by user_id order by amount) as rn,
@@ -68,33 +68,8 @@ These were tested and showed no lift over the 5.0% base rate:
 
 Fraud in this data shows up at the **transaction level** (hour, country, amount relative to the baseline, repeated amounts), not as high volume per user. With about 10 transactions per user in one day, volume and velocity rules have little to find.
 
-### Combining the rules
-Counting how many rules each transaction hits gives a simple risk score:
-
-| Rules hit | Transactions | Fraud | Fraud rate |
-|---|---|---|---|
-| 0 | 9,507 | 9 | 0.1% |
-| 1 | 75 | 73 | 97.3% |
-| 2 | 260 | 260 | 100% |
-| 3 | 133 | 133 | 100% |
-| 4 | 25 | 25 | 100% |
-
-```sql
--- repeated-amount list and per-user medians come from CTEs as above
-select rule_hits, count(*) as transactions, sum(is_fraud) as fraud, round(avg(is_fraud), 3) as fraud_rate
-from (
-  select t.is_fraud,
-         (t.hour < 6) + (t.country = 'NG') + (t.amount > 500)
-         + (m.cnt >= 5 and t.amount > 5 * m.median_amount)
-         + (t.amount in (select amount from repeated)) as rule_hits
-  from synthetic_fraud_dataset t
-  join medians m using (user_id)
-) s
-group by rule_hits
-order by rule_hits;
-```
-
-The 9 fraud transactions that no rule catches have modest amounts and high device and IP risk scores (0.70 or higher).
+### Combining the rules (this will be part of next stage)
+Counting how many rules each transaction hits gives a simple risk score.
 
 ## Risk scores
 `device_risk_score` or `ip_risk_score` of 0.5 or higher flags exactly the 500 fraud transactions, with 100% precision and recall. In this synthetic data the scores separate fraud so cleanly that they say nothing about how rules would perform on real data. I treat them as an upper bound, not a rule to report.
