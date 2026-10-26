@@ -61,18 +61,6 @@ ORDER BY max_to_median DESC;
 
 MySQL has no `MEDIAN()` built in function. The middle row (or the two middle rows when the count is even) is averaged with conditional aggregation.
 
-### Rules that did not work
-These were tested and showed no lift over the 5.0% base rate:
-
-| Rule | Result |
-|---|---|
-| 15+ transactions in the day | 92 users, 1,489 transactions, 4.2% fraud |
-| 20+ transactions in the day | 7 users, 144 transactions, 3.5% fraud |
-| 60%+ of a user's transactions at odd hours (20+ transactions) | 0 users flagged |
-| Velocity spike: 4+ transactions by one user in one hour | 52 user-hours, 210 transactions, 3.3% fraud |
-
-Fraud in this data shows up at the **transaction level** (hour, country, amount relative to the baseline, repeated amounts), not as high volume per user. With about 10 transactions per user in one day, volume and velocity rules have little to find.
-
 ### Combining the rules (this will be part of next stage)
 Counting how many rules each transaction hits gives a simple risk score.
 
