@@ -77,7 +77,7 @@ Counting how many rules each transaction hits gives a simple risk score.
 ## Limitations
 - **Synthetic labels.** Real fraud labels are late, noisy and incomplete. These numbers show how the method works, not how it would perform in production.
 - **No holdout set.** I picked thresholds and measured them on the same data, so the results are optimistic.
-- **R2 and R5 are dataset-specific.** NG is hard-coded because it showed up in this data. A real system would use a maintained country-risk list. R5 found repeated amounts of $10.00 and $22.17, which in real data would need review before use.
+- **Rule 2 and Rule 5 are dataset-specific.** NG is hard-coded because it showed up in this data. A real system would use a maintained country-risk list. Rule 5 found repeated amounts of $10.00 and $22.17, which in real data would need review before use.
 - **One day of data,** so there is no multi-day behavior, no true velocity analysis, and no per-user history to build a baseline from.
 - **Thresholds are judgment calls** (5x, 500, hour < 6) and should be tuned with a precision and alert-volume trade-off in mind.
 
