@@ -25,12 +25,12 @@ Each rule flags transactions. **Precision** is the share of flagged transactions
 
 | Rule | Logic | Flagged | Fraud | Precision | Recall |
 |---|---|---|---|---|---|
-| R1. Odd hours | `hour < 6` | 193 | 193 | 100% | 38.6% |
-| R2. High-risk country | `country = 'NG'` | 100 | 100 | 100% | 20.0% |
-| R3. High amount | `amount > 500` | 337 | 337 | 100% | 67.4% |
-| R4. Outlier vs. user's own median | `amount > 5 x user median` (users with 5+ transactions) | 331 | 329 | 99.4% | 65.8% |
-| R5. Repeated fixed amounts | same amount (above $1) appears 10+ times | 133 | 133 | 100% | 26.6% |
-| **Any rule (R1 to R5)** | at least one rule hit | **493** | **491** | **99.6%** | **98.2%** |
+| 1. Odd hours | `hour < 6` | 193 | 193 | 100% | 38.6% |
+| 2. High-risk country | `country = 'NG'` | 100 | 100 | 100% | 20.0% |
+| 3. High amount | `amount > 500` | 337 | 337 | 100% | 67.4% |
+| 4. Outlier vs. user's own median | `amount > 5 x user median` (users with 5+ transactions) | 331 | 329 | 99.4% | 65.8% |
+| 5. Repeated fixed amounts | same amount (above $1) appears 10+ times | 133 | 133 | 100% | 26.6% |
+| **Any rule (1 to 5)** | at least one rule hit | **493** | **491** | **99.6%** | **98.2%** |
 
 ### Why a median baseline (R4)
 My first version compared each user's maximum to their average. One large transaction inflates the average and hides itself. Using the median fixes that. At the same 5x threshold, the average baseline catches 228 fraud transactions (45.6% recall, no false positives). The median baseline catches 329 (65.8% recall) at the cost of 2 false positives.
@@ -54,7 +54,7 @@ join medians m using (user_id)
 where m.cnt >= 5 and t.amount > 5 * m.median_amount;
 ```
 
-MySQL has no `MEDIAN()`. The middle row (or the two middle rows when the count is even) is averaged with conditional aggregation.
+MySQL has no `MEDIAN()` built in function. The middle row (or the two middle rows when the count is even) is averaged with conditional aggregation.
 
 ### Rules that did not work
 These were tested and showed no lift over the 5.0% base rate:
