@@ -32,7 +32,7 @@ Each rule flags transactions. **Precision** is the share of flagged transactions
 | 5. Repeated fixed amounts | same amount (above $1) appears 10+ times | 133 | 133 | 100% | 26.6% |
 | **Any rule (1 to 5)** | at least one rule hit | **493** | **491** | **99.6%** | **98.2%** |
 
-### Why a median baseline (R4)
+### Why a median baseline (Rule 4)
 My first version compared each user's maximum to their average. One large transaction inflates the average and hides itself. Using the median fixes that. At the same 5x threshold, the average baseline catches 228 fraud transactions (45.6% recall, no false positives). The median baseline catches 329 (65.8% recall) at the cost of 2 false positives.
 
 ```sql
